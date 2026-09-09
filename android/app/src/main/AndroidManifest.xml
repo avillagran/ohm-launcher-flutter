@@ -28,6 +28,7 @@
          y sincronizarlo con el PC Omarchy sin volver al launcher. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Bluetooth (autodetección de peer Omarchy por BLE). -->
@@ -57,6 +58,7 @@
         android:label="Ohm Launcher"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true">
         <activity
             android:name=".MainActivity"
@@ -111,6 +113,13 @@
             android:name=".ClipboardMonitorService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <!-- FGS requerido por Android 14+ para MediaProjection (compartir
+             pantalla con la PC Omarchy vía omarchy-link). -->
+        <service
+            android:name=".ScreenCaptureService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
 
         <service
             android:name=".OhmGestureAccessibilityService"

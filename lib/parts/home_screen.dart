@@ -570,9 +570,13 @@ class _OhmHomeScreenState extends State<OhmHomeScreen> {
       },
       onPeerSeen: (ip, port) {
         // The Omarchy desktop contacted us (mDNS/QR from its side). Reflect the
-        // live connection even if we never scanned its `omarchy://` QR.
+        // live connection even if we never scanned its `omarchy://` QR — but do
+        // NOT override an existing peer: connections arriving via adb forward
+        // (or another interface) report a bogus remote address (127.0.0.1) and
+        // would hijack the real peer. The periodic probe drops dead peers, so a
+        // stale entry clears itself and a later peer-seen can adopt the new one.
         print('[OmarchyLink] peer seen: $ip:$port');
-        if (_omarchyPeer == null || _omarchyPeer!.ip != ip) {
+        if (_omarchyPeer == null) {
           if (mounted) {
             setState(() => _omarchyPeer = (ip: ip, port: port, id: 'omarchy-pc'));
             OhmPlatform.startClipboardMonitor(ip, port);
@@ -723,10 +727,19 @@ class _OhmHomeScreenState extends State<OhmHomeScreen> {
   Future<void> _notifyOmarchyPeer(String ip, int port, String id) async {
     try {
       final myIp = await _lanIp();
+      final myPort = ((_settings['apiServerPort'] as num?) ?? 8753).toInt();
       final client = HttpClient();
       final req = await client.postUrl(Uri.parse('http://$ip:$port/omarchy/link'));
+      final body = utf8.encode(jsonEncode({
+        'ip': myIp,
+        'port': myPort,
+        'name': id.isNotEmpty ? id : 'OhmLauncher',
+      }));
       req.headers.contentType = ContentType.json;
-      req.write(jsonEncode({'ip': myIp, 'name': id.isNotEmpty ? id : 'OhmLauncher'}));
+      // Explicit length: without it dart:io sends Transfer-Encoding: chunked,
+      // which Python's http.server (link_server.py) cannot decode.
+      req.contentLength = body.length;
+      req.add(body);
       await req.close();
       client.close();
     } catch (_) {
@@ -745,6 +758,9 @@ class _OhmHomeScreenState extends State<OhmHomeScreen> {
         Uri.parse('http://${peer.ip}:${peer.port}/omarchy/screen/frame'),
       );
       req.headers.contentType = ContentType('image', 'jpeg');
+      // Explicit length: chunked bodies are not decodable by the PC's
+      // Python http.server link server.
+      req.contentLength = jpeg.length;
       req.add(jpeg);
       await req.close();
       client.close();

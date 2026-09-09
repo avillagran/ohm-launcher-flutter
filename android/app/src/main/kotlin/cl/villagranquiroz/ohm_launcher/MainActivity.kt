@@ -756,11 +756,40 @@ class MainActivity : FlutterActivity() {
         mediaProjection = null
         try { imageReader?.close() } catch (_: Exception) {}
         imageReader = null
+        // Release the mediaProjection-type foreground service.
+        try {
+            val svc = Intent(this, ScreenCaptureService::class.java).apply {
+                putExtra("stop", true)
+            }
+            startService(svc)
+        } catch (_: Exception) {}
     }
 
     private fun _handleScreenResult(resultCode: Int, data: Intent?) {
         if (resultCode != RESULT_OK || data == null) return
+        // Run off the main thread: awaiting the FGS latch on the main thread
+        // deadlocks (the service's onStartCommand is queued on the same looper
+        // this callback runs on).
+        val consent = Intent(data)
+        Thread { _startProjection(resultCode, consent) }.start()
+    }
+
+    private fun _startProjection(resultCode: Int, data: Intent) {
         try {
+            // Android 14+: a mediaProjection-type foreground service must be
+            // running BEFORE getMediaProjection, otherwise it throws
+            // "Media projections require a foreground service of type
+            // ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION".
+            val svc = Intent(this, ScreenCaptureService::class.java)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                startForegroundService(svc)
+            } else {
+                startService(svc)
+            }
+            if (!ScreenCaptureService.awaitForeground(3000)) {
+                Log.e("OhmScreen", "capture error: screen FGS did not reach foreground")
+                return
+            }
             mediaProjection = mediaProjectionManager?.getMediaProjection(resultCode, data!!)
             val metrics = resources.displayMetrics
             val w = metrics.widthPixels
@@ -770,6 +799,13 @@ class MainActivity : FlutterActivity() {
             mediaProjection?.registerCallback(object : MediaProjection.Callback() {
                 override fun onStop() { stopScreenCapture() }
             }, handler)
+            // Bind the projection output to the ImageReader surface; without a
+            // VirtualDisplay the reader never receives frames.
+            mediaProjection?.createVirtualDisplay(
+                "ohm-screen", w, h, metrics.densityDpi,
+                android.hardware.display.DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                imageReader?.surface, null, handler,
+            )
             screenRunning = true
             screenThread = Thread {
                 while (screenRunning) {
