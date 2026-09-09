@@ -35,6 +35,15 @@ typedef ScreenStarter = Future<Map<String, dynamic>> Function();
 typedef ScreenStopper = Future<void> Function();
 typedef PhotosBackup = Future<Map<String, dynamic>> Function();
 
+/// Lists a directory for the peer's file browser. [path] is absolute; the
+/// launcher must confine it to shared/storage roots.
+typedef FilesLister = Future<Map<String, dynamic>> Function(String path);
+
+/// Handles a remote-control input event from the peer:
+/// `{action:'tap',x,y}`, `{action:'swipe',x1,y1,x2,y2,durationMs?}` or
+/// `{action:'key',key:'back'|'home'|'recents'}` (coordinates in phone pixels).
+typedef InputEventHandler = Future<Map<String, dynamic>> Function(Map<String, dynamic> event);
+
 /// Called when a peer (the Omarchy desktop) contacts the launcher. [ip] is
 /// the remote address that reached the local API server; the desktop's own
 /// link server is assumed to listen on the same host at [defaultPort].
@@ -58,6 +67,8 @@ class OmarchyLink {
     this.onPhotosBackup,
     this.onScreenFrame,
     this.onPeerSeen,
+    this.onFilesList,
+    this.onInputEvent,
   });
 
   final DiscoverInfo? onDiscover;
@@ -72,6 +83,8 @@ class OmarchyLink {
   final PhotosBackup? onPhotosBackup;
   final ScreenFrameProvider? onScreenFrame;
   final PeerSeen? onPeerSeen;
+  final FilesLister? onFilesList;
+  final InputEventHandler? onInputEvent;
 
   final Set<WebSocket> _clients = {};
   bool _screenActive = false;
@@ -162,6 +175,17 @@ class OmarchyLink {
           ..add(bytes);
         return;
       }
+      if (request.method == 'GET' && path == '/omarchy/files') {
+        if (onFilesList == null) return _json(request, 501, _unsupported('files'));
+        final p = request.uri.queryParameters['path'] ?? '/sdcard';
+        return _json(request, 200, await onFilesList!(p));
+      }
+      if (request.method == 'POST' && path == '/omarchy/input') {
+        if (onInputEvent == null) return _json(request, 501, _unsupported('input'));
+        final body = await _readBody(request);
+        final r = await onInputEvent!(body);
+        return _json(request, 200, r);
+      }
       return _json(request, 404, {'error': 'not_found', 'path': path});
     } catch (e) {
       return _json(request, 500, {'error': 'internal', 'detail': '$e'});
@@ -196,6 +220,14 @@ class OmarchyLink {
               _screenLoop(socket);
             } else if (data['type'] == 'screen_stop') {
               _screenActive = false;
+            } else if (data['type'] == 'input' && onInputEvent != null) {
+              // Remote control: {type:'input', action:'tap'|'swipe'|'key', ...}
+              try {
+                final r = await onInputEvent!(data);
+                socket.add(jsonEncode({'type': 'input_result', ...r}));
+              } catch (e) {
+                socket.add(jsonEncode({'type': 'input_result', 'ok': false, 'error': '$e'}));
+              }
             }
           } catch (_) {}
         }

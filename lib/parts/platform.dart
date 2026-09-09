@@ -270,6 +270,42 @@ class OhmPlatform {
     } catch (_) {}
   }
 
+  /// Remote control: inject a tap at phone pixel ([x], [y]). Requires the
+  /// Ohm accessibility service enabled (it performs dispatchGesture).
+  /// Returns an error map when the service is off or the gesture fails.
+  static Future<Map<String, dynamic>> remoteTap(double x, double y) async {
+    try {
+      final r = await _channel.invokeMethod<Map<dynamic, dynamic>>('injectTap', {'x': x, 'y': y});
+      return {'ok': r?['ok'] == true, if (r?['error'] != null) 'error': r!['error']};
+    } catch (e) {
+      return {'ok': false, 'error': '$e'};
+    }
+  }
+
+  /// Remote control: inject a swipe between two phone-pixel points.
+  static Future<Map<String, dynamic>> remoteSwipe(
+    double x1, double y1, double x2, double y2, int durationMs,
+  ) async {
+    try {
+      final r = await _channel.invokeMethod<Map<dynamic, dynamic>>('injectSwipe', {
+        'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2, 'durationMs': durationMs,
+      });
+      return {'ok': r?['ok'] == true, if (r?['error'] != null) 'error': r!['error']};
+    } catch (e) {
+      return {'ok': false, 'error': '$e'};
+    }
+  }
+
+  /// Remote control: global navigation action ('back' | 'home' | 'recents').
+  static Future<Map<String, dynamic>> remoteKey(String key) async {
+    try {
+      final r = await _channel.invokeMethod<Map<dynamic, dynamic>>('injectKey', {'key': key});
+      return {'ok': r?['ok'] == true, if (r?['error'] != null) 'error': r!['error']};
+    } catch (e) {
+      return {'ok': false, 'error': '$e'};
+    }
+  }
+
   /// Stops the background clipboard monitor.
   static Future<void> stopClipboardMonitor() async {
     try {

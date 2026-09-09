@@ -253,6 +253,47 @@ class MainActivity : FlutterActivity() {
                         stopClipboardMonitor()
                         result.success(null)
                     }
+                    "injectTap" -> {
+                        // Remote control (Omarchy peer). Needs the accessibility
+                        // service enabled; dispatchGesture is the only global
+                        // input injection available to non-system apps.
+                        val x = call.argument<Double>("x") ?: 0.0
+                        val y = call.argument<Double>("y") ?: 0.0
+                        val svc = OhmGestureAccessibilityService.instance
+                        if (svc == null) {
+                            result.success(mapOf("ok" to false, "error" to "accessibility_disabled"))
+                        } else {
+                            svc.remoteTap(x.toFloat(), y.toFloat()) { ok ->
+                                runOnUiThread { result.success(mapOf("ok" to ok)) }
+                            }
+                        }
+                    }
+                    "injectSwipe" -> {
+                        val x1 = call.argument<Double>("x1") ?: 0.0
+                        val y1 = call.argument<Double>("y1") ?: 0.0
+                        val x2 = call.argument<Double>("x2") ?: 0.0
+                        val y2 = call.argument<Double>("y2") ?: 0.0
+                        val dur = call.argument<Int>("durationMs") ?: 300
+                        val svc = OhmGestureAccessibilityService.instance
+                        if (svc == null) {
+                            result.success(mapOf("ok" to false, "error" to "accessibility_disabled"))
+                        } else {
+                            svc.remoteSwipe(
+                                x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat(), dur.toLong(),
+                            ) { ok ->
+                                runOnUiThread { result.success(mapOf("ok" to ok)) }
+                            }
+                        }
+                    }
+                    "injectKey" -> {
+                        val key = call.argument<String>("key") ?: ""
+                        val svc = OhmGestureAccessibilityService.instance
+                        if (svc == null) {
+                            result.success(mapOf("ok" to false, "error" to "accessibility_disabled"))
+                        } else {
+                            result.success(mapOf("ok" to svc.remoteKey(key)))
+                        }
+                    }
                     "setImmersiveMode" -> {
                         val enabled = call.argument<Boolean>("enabled") ?: true
                         if (enabled) applyImmersiveMode() else disableImmersiveMode()

@@ -1,6 +1,7 @@
 package cl.villagranquiroz.ohm_launcher
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.GestureDescription
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -44,6 +45,7 @@ class OhmGestureAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         Log.d(TAG, "onServiceConnected")
+        instance = this
         applyOverlaysForNavMode()
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_ON)
@@ -123,9 +125,78 @@ class OhmGestureAccessibilityService : AccessibilityService() {
 
     override fun onUnbind(intent: Intent?): Boolean {
         Log.d(TAG, "onUnbind")
+        instance = null
         removeOverlays()
         try { unregisterReceiver(screenReceiver) } catch (_: Exception) {}
         return super.onUnbind(intent)
+    }
+
+    // ============================================================
+    //  Remote control (Omarchy peer PC injects input on the phone).
+    //  Uses AccessibilityService.dispatchGesture (API 24+): the only way a
+    //  non-system app can inject global touch input.
+    // ============================================================
+
+    /** Taps at phone pixel (x, y). [cb] receives true when dispatched. */
+    fun remoteTap(x: Float, y: Float, cb: (Boolean) -> Unit) {
+        val path = android.graphics.Path().apply { moveTo(x, y) }
+        val stroke = GestureDescription.StrokeDescription(path, 0, 50)
+        // The GestureResultCallback may never fire on some builds (gesture
+        // dropped by the window manager), which would hang the MethodChannel
+        // reply — so we report the synchronous dispatch result and use the
+        // callback only for logging.
+        val accepted = try {
+            dispatchGesture(
+                GestureDescription.Builder().addStroke(stroke).build(),
+                object : GestureResultCallback() {
+                    override fun onCompleted(gestureDescription: GestureDescription?) {
+                        Log.d(TAG, "remoteTap completed")
+                    }
+                    override fun onCancelled(gestureDescription: GestureDescription?) {
+                        Log.d(TAG, "remoteTap cancelled")
+                    }
+                },
+                null,
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "remoteTap failed: ${e.message}")
+            false
+        }
+        cb(accepted)
+    }
+
+    /** Swipes between two phone-pixel points over [durationMs]. */
+    fun remoteSwipe(
+        x1: Float, y1: Float, x2: Float, y2: Float, durationMs: Long, cb: (Boolean) -> Unit,
+    ) {
+        val path = android.graphics.Path().apply { moveTo(x1, y1); lineTo(x2, y2) }
+        val stroke = GestureDescription.StrokeDescription(path, 0, durationMs.coerceIn(50, 5000))
+        val accepted = try {
+            dispatchGesture(
+                GestureDescription.Builder().addStroke(stroke).build(),
+                object : GestureResultCallback() {
+                    override fun onCompleted(gestureDescription: GestureDescription?) {
+                        Log.d(TAG, "remoteSwipe completed")
+                    }
+                    override fun onCancelled(gestureDescription: GestureDescription?) {
+                        Log.d(TAG, "remoteSwipe cancelled")
+                    }
+                },
+                null,
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "remoteSwipe failed: ${e.message}")
+            false
+        }
+        cb(accepted)
+    }
+
+    /** Global navigation: 'back' | 'home' | 'recents'. */
+    fun remoteKey(key: String): Boolean = when (key) {
+        "back" -> performGlobalAction(GLOBAL_ACTION_BACK)
+        "home" -> performGlobalAction(GLOBAL_ACTION_HOME)
+        "recents" -> performGlobalAction(GLOBAL_ACTION_RECENTS)
+        else -> false
     }
 
     private fun recreateOverlays() {
@@ -397,5 +468,9 @@ class OhmGestureAccessibilityService : AccessibilityService() {
         private const val RECENTS_HOLD_DURATION_MS = 220L
         private const val STILL_DURATION_MS = 100L
         private const val RECENTS_PACKAGE = "com.miui.home"
+
+        /** Live service instance (null while disabled). Used by MainActivity
+         *  to route remote-control input from the Omarchy peer. */
+        @Volatile var instance: OhmGestureAccessibilityService? = null
     }
 }

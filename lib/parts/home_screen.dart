@@ -65,6 +65,9 @@ class _OhmHomeScreenState extends State<OhmHomeScreen> {
   OmarchyAnnouncer? _announcer;
   ScreenCapture? _screenCapture;
   bool _screenSharing = false;
+  // Phone pixel size while screen sharing (for PC-side tap mapping).
+  int _screenW = 0;
+  int _screenH = 0;
   // Omarchy peer detected via `omarchy://` QR (system camera).
   ({String ip, int port, String id})? _omarchyPeer;
   // Draggable position of the Omarchy control tile (persisted in settings).
@@ -499,7 +502,7 @@ class _OhmHomeScreenState extends State<OhmHomeScreen> {
         'version': 1,
         'lan_ip': await _lanIp(),
         'port': port,
-        'capabilities': ['clipboard', 'file', 'theme', 'screen', 'photos'],
+        'capabilities': ['clipboard', 'file', 'files', 'theme', 'screen', 'photos', 'input'],
       },
       onClipboardGet: () async {
         final data = await Clipboard.getData('text/plain');
@@ -527,10 +530,73 @@ class _OhmHomeScreenState extends State<OhmHomeScreen> {
         if (!await f.exists()) return <int>[];
         return await f.readAsBytes();
       },
+      onFilesList: (path) async {
+        // File browser for the peer. Confined to shared storage roots.
+        final roots = ['/sdcard', '/storage/emulated/0'];
+        final norm = path.isEmpty ? '/sdcard' : path;
+        if (!roots.any((r) => norm == r || norm.startsWith('$r/'))) {
+          return {'error': 'forbidden_path', 'path': norm, 'entries': <dynamic>[]};
+        }
+        final dir = Directory(norm);
+        if (!await dir.exists()) {
+          return {'error': 'not_found', 'path': norm, 'entries': <dynamic>[]};
+        }
+        final entries = <Map<String, dynamic>>[];
+        try {
+          await for (final e in dir.list(followLinks: false)) {
+            try {
+              final st = await e.stat();
+              entries.add({
+                'name': e.path.split('/').last,
+                'path': e.path,
+                'isDir': e is Directory,
+                'size': e is File ? st.size : 0,
+                'modified': st.modified.millisecondsSinceEpoch,
+              });
+            } catch (_) {}
+          }
+        } catch (_) {}
+        entries.sort((a, b) {
+          if (a['isDir'] != b['isDir']) return a['isDir'] == true ? -1 : 1;
+          return (a['name'] as String).toLowerCase().compareTo((b['name'] as String).toLowerCase());
+        });
+        final parent = Directory(norm).parent.path;
+        return {
+          'path': norm,
+          'parent': roots.any((r) => norm == r) ? '' : parent,
+          'entries': entries,
+        };
+      },
+      onInputEvent: (ev) async {
+        // Remote control from the peer PC (tap/swipe/key on the phone screen).
+        final action = ev['action'] as String? ?? '';
+        num n(String k, [num d = 0]) => (ev[k] as num?) ?? d;
+        switch (action) {
+          case 'tap':
+            return await OhmPlatform.remoteTap(n('x').toDouble(), n('y').toDouble());
+          case 'swipe':
+            return await OhmPlatform.remoteSwipe(
+              n('x1').toDouble(), n('y1').toDouble(),
+              n('x2').toDouble(), n('y2').toDouble(),
+              n('durationMs', 300).toInt(),
+            );
+          case 'key':
+            return await OhmPlatform.remoteKey(ev['key'] as String? ?? '');
+          default:
+            return {'ok': false, 'error': 'unknown_action', 'action': action};
+        }
+      },
       onScreenStart: () async {
         _screenCapture ??= ScreenCapture(
           onFrame: (jpeg) => _postScreenFrame(jpeg),
         );
+        // Phone pixel size, sent with each frame so the PC panel can map
+        // remote-control taps back onto the phone screen.
+        try {
+          final view = View.of(context);
+          _screenW = view.physicalSize.width.round();
+          _screenH = view.physicalSize.height.round();
+        } catch (_) {}
         final ok = await _screenCapture!.start();
         if (mounted) setState(() => _screenSharing = ok);
         return {'status': ok ? 'started' : 'denied'};
@@ -755,7 +821,7 @@ class _OhmHomeScreenState extends State<OhmHomeScreen> {
     try {
       final client = HttpClient();
       final req = await client.postUrl(
-        Uri.parse('http://${peer.ip}:${peer.port}/omarchy/screen/frame'),
+        Uri.parse('http://${peer.ip}:${peer.port}/omarchy/screen/frame?w=$_screenW&h=$_screenH'),
       );
       req.headers.contentType = ContentType('image', 'jpeg');
       // Explicit length: chunked bodies are not decodable by the PC's
