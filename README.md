@@ -1,4 +1,9 @@
-# OhmLauncher
+# OhmLauncher — Flutter implementation
+
+This repository contains the preserved Flutter implementation. Active native
+Android development now lives in the sibling project
+[`../ohm-launcher`](../ohm-launcher). This checkout remains available as the
+behavioral and compatibility reference for the Kotlin rewrite.
 
 A self-managed minimalist Android launcher whose UI is generated reactively from
 JSON stored on external storage (`/sdcard/OhmLauncher/widgets_config.json`),
