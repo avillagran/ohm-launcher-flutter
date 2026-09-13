@@ -260,6 +260,7 @@ class _DesktopPager extends StatefulWidget {
 
 class _DesktopPagerState extends State<_DesktopPager> {
   late final PageController _controller;
+  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -280,12 +281,16 @@ class _DesktopPagerState extends State<_DesktopPager> {
       physics: widget.editingWidget != null
           ? const NeverScrollableScrollPhysics()
           : null,
-      onPageChanged: widget.onPageChanged,
+      onPageChanged: (index) {
+        setState(() => _currentIndex = index);
+        widget.onPageChanged?.call(index);
+      },
       itemCount: widget.desktops.length,
       itemBuilder: (context, i) => _DesktopPage(
         raw: widget.desktops[i],
         wallpaper: widget.wallpaper,
         desktopIndex: i,
+        active: i == _currentIndex,
         onLongPress: () => widget.onLongPressDesktop?.call(i),
         editingWidget: widget.editingWidget,
         onWidgetLongPress: (wi) => widget.onWidgetLongPress?.call(wi),
@@ -344,6 +349,7 @@ class _DesktopPage extends StatelessWidget {
     required this.raw,
     this.wallpaper,
     required this.desktopIndex,
+    required this.active,
     this.onLongPress,
     this.editingWidget,
     this.onWidgetLongPress,
@@ -358,6 +364,7 @@ class _DesktopPage extends StatelessWidget {
   final Object? raw;
   final String? wallpaper;
   final int desktopIndex;
+  final bool active;
   final VoidCallback? onLongPress;
   final int? editingWidget;
   final ValueChanged<int>? onWidgetLongPress;
@@ -381,6 +388,20 @@ class _DesktopPage extends StatelessWidget {
     final name = map['name'] is String ? map['name'] as String : 'Escritorio ${desktopIndex + 1}';
     final bg = map['background'] is String ? map['background'] as String : (wallpaper ?? '#0B0F14');
     final bgImage = map['backgroundImage'] is String ? map['backgroundImage'] as String : '';
+    final ttfxEnabled = map['ttfxBackground'] as bool? ?? true;
+    final ttfxEffect = map['ttfxEffect'] as String? ?? 'matrix';
+    final ttfxText = map['ttfxText'] as String? ?? 'OHM';
+    final ttfxTextSize = (map['ttfxTextSize'] as num?)?.toInt() ?? 3;
+    final ttfxTextX = (map['ttfxTextX'] as num?)?.toDouble() ?? .5;
+    final ttfxTextY = (map['ttfxTextY'] as num?)?.toDouble() ?? .5;
+    final ttfxAudio = map['ttfxAudio'] as bool? ?? true;
+    final ttfxIntensity = (map['ttfxIntensity'] as num?)?.toInt() ?? 5;
+    final ttfxSpeed = (map['ttfxSpeed'] as num?)?.toDouble() ?? 1;
+    final ttfxResolution = (map['ttfxResolution'] as num?)?.toInt() ?? 2;
+    final ttfxReactivity = (map['ttfxReactivity'] as num?)?.toInt() ?? 2;
+    final ttfxAccent = map['ttfxAccent'] is String
+        ? DynamicWidgetEngine.colorFromHex(map['ttfxAccent'] as String)
+        : const Color(0xFF66E0FF);
     final fontF = map['fontFamily'] is String ? map['fontFamily'] as String : '';
     final titleF = map['titleFont'] is String ? map['titleFont'] as String : '';
     final widgets = map['widgets'];
@@ -399,7 +420,21 @@ class _DesktopPage extends StatelessWidget {
         content = _buildEditableWidgets(context, widgets, gridCols: gridCols, gridRows: gridRows);
       } else {
         content = _buildWidgetGrid(context, widgets, bg, name,
-            backgroundImage: bgImage, gridCols: gridCols, gridRows: gridRows);
+            backgroundImage: bgImage,
+            gridCols: gridCols,
+            gridRows: gridRows,
+            ttfxEnabled: ttfxEnabled,
+            ttfxEffect: ttfxEffect,
+            ttfxText: ttfxText,
+            ttfxTextSize: ttfxTextSize,
+            ttfxTextX: ttfxTextX,
+            ttfxTextY: ttfxTextY,
+            ttfxAudio: ttfxAudio,
+            ttfxIntensity: ttfxIntensity,
+            ttfxSpeed: ttfxSpeed,
+            ttfxResolution: ttfxResolution,
+            ttfxReactivity: ttfxReactivity,
+            ttfxAccent: ttfxAccent);
       }
     } else {
       content = const SizedBox.shrink();
@@ -430,7 +465,21 @@ class _DesktopPage extends StatelessWidget {
   /// Grid: each widget is placed in cells (x, y, w, h) over a grid
   /// per desktop (columns x rows, default 12x8).
   Widget _buildWidgetGrid(BuildContext context, List<Object?> widgets, String bg, String name,
-      {String backgroundImage = '', int gridCols = 12, int gridRows = 8}) {
+      {String backgroundImage = '',
+      int gridCols = 12,
+      int gridRows = 8,
+      bool ttfxEnabled = true,
+      String ttfxEffect = 'matrix',
+      String ttfxText = 'OHM',
+      int ttfxTextSize = 3,
+      double ttfxTextX = .5,
+      double ttfxTextY = .5,
+      bool ttfxAudio = true,
+      int ttfxIntensity = 5,
+      double ttfxSpeed = 1,
+      int ttfxResolution = 2,
+      int ttfxReactivity = 2,
+      Color ttfxAccent = const Color(0xFF66E0FF)}) {
     final size = MediaQuery.sizeOf(context);
     final padTop = MediaQuery.paddingOf(context).top + 70;
     final padBottom = 72.0;
@@ -469,6 +518,20 @@ class _DesktopPage extends StatelessWidget {
     final stack = Stack(
       fit: StackFit.expand,
       children: [
+        if (ttfxEnabled && active)
+          TtfxBackground(
+            effect: ttfxEffect,
+            text: ttfxText,
+            textSize: ttfxTextSize,
+            textX: ttfxTextX,
+            textY: ttfxTextY,
+            audioReactive: ttfxAudio,
+            intensity: ttfxIntensity,
+            speed: ttfxSpeed,
+            resolution: ttfxResolution,
+            reactivity: ttfxReactivity,
+            accent: ttfxAccent,
+          ),
         if (backgroundImage.isNotEmpty && File(backgroundImage).existsSync())
           Image.file(
             File(backgroundImage),

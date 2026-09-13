@@ -23,6 +23,7 @@ import android.appwidget.AppWidgetManager
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
@@ -149,6 +150,10 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.ohm/audio_spectrum",
+        ).setStreamHandler(AudioSpectrumStream(applicationContext))
         appWidgetHost = AppWidgetHost(applicationContext, 0x0A0B0C)
         try {
             appWidgetHost.startListening()
@@ -210,6 +215,7 @@ class MainActivity : FlutterActivity() {
                         result.success(getAppIcon(pkg, activity) ?: ByteArray(0))
                     }
                     "getBatteryLevel" -> result.success(getBatteryLevel())
+                    "getNativeAbi" -> result.success(Build.SUPPORTED_ABIS.firstOrNull() ?: "")
                     "isDefaultLauncher" -> result.success(isDefaultLauncher())
                     "getNavigationMode" -> result.success(getNavigationMode())
                     "requestDefaultLauncher" -> {

@@ -78,6 +78,8 @@ flutter:
 
   assets:
     - assets/terminfo/x/xterm-256color
+    - assets/bin/ttfx-aarch64
+    - assets/bin/ttfx-x86_64
 
   # To add assets to your application, add an assets section, like this:
   # assets:

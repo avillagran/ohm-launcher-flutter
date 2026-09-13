@@ -23,6 +23,9 @@
 
     <!-- Acceso de red: registro del marketplace de plugins (omarchyplugins.com). -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Output-mix FFT for the audio-reactive TTFX desktop background. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <!-- Foreground service para monitorear el portapapeles en segundo plano
          y sincronizarlo con el PC Omarchy sin volver al launcher. -->

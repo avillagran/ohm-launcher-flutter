@@ -51,6 +51,7 @@ import 'clock_styles.dart';
 import 'clock_widget.dart';
 import 'plugin_network.dart';
 import 'qml_bridge/qml_widgets.dart';
+import 'ttfx_background.dart';
 import 'parts/ai_client.dart';
 import 'parts/ai_panel.dart';
 import 'parts/local_api_server.dart';

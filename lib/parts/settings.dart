@@ -7,24 +7,68 @@ class _DesktopSettingsSheet extends StatefulWidget {
     required this.currentTitleFont,
     required this.currentGridCols,
     required this.currentGridRows,
+    required this.ttfxEnabled,
+    required this.ttfxEffect,
+    required this.ttfxText,
+    required this.ttfxTextSize,
+    required this.ttfxTextX,
+    required this.ttfxTextY,
+    required this.ttfxAudio,
+    required this.ttfxIntensity,
+    required this.ttfxSpeed,
+    required this.ttfxResolution,
+    required this.ttfxReactivity,
     required this.onFontFamily,
     required this.onTitleFont,
     required this.onBackground,
     required this.onBackgroundImage,
     required this.onGridCols,
     required this.onGridRows,
+    required this.onTtfxEnabled,
+    required this.onTtfxEffect,
+    required this.onTtfxText,
+    required this.onTtfxTextSize,
+    required this.onTtfxTextX,
+    required this.onTtfxTextY,
+    required this.onTtfxAudio,
+    required this.onTtfxIntensity,
+    required this.onTtfxSpeed,
+    required this.onTtfxResolution,
+    required this.onTtfxReactivity,
   });
 
   final String currentFontFamily;
   final String currentTitleFont;
   final int currentGridCols;
   final int currentGridRows;
+  final bool ttfxEnabled;
+  final String ttfxEffect;
+  final String ttfxText;
+  final int ttfxTextSize;
+  final double ttfxTextX;
+  final double ttfxTextY;
+  final bool ttfxAudio;
+  final int ttfxIntensity;
+  final double ttfxSpeed;
+  final int ttfxResolution;
+  final int ttfxReactivity;
   final ValueChanged<String> onFontFamily;
   final ValueChanged<String> onTitleFont;
   final ValueChanged<String> onBackground;
   final ValueChanged<String> onBackgroundImage;
   final ValueChanged<int> onGridCols;
   final ValueChanged<int> onGridRows;
+  final ValueChanged<bool> onTtfxEnabled;
+  final ValueChanged<String> onTtfxEffect;
+  final ValueChanged<String> onTtfxText;
+  final ValueChanged<int> onTtfxTextSize;
+  final ValueChanged<double> onTtfxTextX;
+  final ValueChanged<double> onTtfxTextY;
+  final ValueChanged<bool> onTtfxAudio;
+  final ValueChanged<int> onTtfxIntensity;
+  final ValueChanged<double> onTtfxSpeed;
+  final ValueChanged<int> onTtfxResolution;
+  final ValueChanged<int> onTtfxReactivity;
 
   @override
   State<_DesktopSettingsSheet> createState() => _DesktopSettingsSheetState();
@@ -35,12 +79,22 @@ class _DesktopSettingsSheetState extends State<_DesktopSettingsSheet> {
   late String _titleFont = widget.currentTitleFont;
   late int _gridCols = widget.currentGridCols;
   late int _gridRows = widget.currentGridRows;
+  late bool _ttfxEnabled = widget.ttfxEnabled;
+  late String _ttfxEffect = widget.ttfxEffect;
+  late final TextEditingController _ttfxTextController = TextEditingController(
+    text: widget.ttfxText,
+  );
+  Timer? _ttfxTextDebounce;
+  late double _ttfxTextSize = widget.ttfxTextSize.toDouble();
+  late double _ttfxTextX = widget.ttfxTextX;
+  late double _ttfxTextY = widget.ttfxTextY;
+  late bool _ttfxAudio = widget.ttfxAudio;
+  late double _ttfxIntensity = widget.ttfxIntensity.toDouble();
+  late double _ttfxSpeed = widget.ttfxSpeed;
+  late double _ttfxResolution = widget.ttfxResolution.toDouble();
+  late double _ttfxReactivity = widget.ttfxReactivity.toDouble();
 
-  static const _fonts = <String>[
-    'Predeterminada',
-    'monospace',
-    'serif',
-  ];
+  static const _fonts = <String>['Predeterminada', 'monospace', 'serif'];
 
   static const _googleFonts = <String>[
     'Abril Fatface',
@@ -90,7 +144,11 @@ class _DesktopSettingsSheetState extends State<_DesktopSettingsSheet> {
               children: [
                 const Text(
                   'Fuentes de Google Fonts',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFFE8F1F8)),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFE8F1F8),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Expanded(
@@ -105,10 +163,17 @@ class _DesktopSettingsSheetState extends State<_DesktopSettingsSheet> {
                         dense: true,
                         title: Text(
                           name,
-                          style: style.copyWith(fontSize: 16, color: const Color(0xFFE8F1F8)),
+                          style: style.copyWith(
+                            fontSize: 16,
+                            color: const Color(0xFFE8F1F8),
+                          ),
                         ),
                         trailing: current == name
-                            ? const Icon(Icons.check, color: Color(0xFF66E0FF), size: 18)
+                            ? const Icon(
+                                Icons.check,
+                                color: Color(0xFF66E0FF),
+                                size: 18,
+                              )
                             : null,
                         onTap: () => Navigator.of(context).pop(name),
                       );
@@ -164,16 +229,20 @@ class _DesktopSettingsSheetState extends State<_DesktopSettingsSheet> {
       try {
         final files = dir.listSync().whereType<File>().where((f) {
           final n = f.path.toLowerCase();
-          return n.endsWith('.jpg') || n.endsWith('.jpeg') || n.endsWith('.png') || n.endsWith('.webp');
-        }).toList()
-          ..sort((a, b) => a.path.compareTo(b.path));
+          return n.endsWith('.jpg') ||
+              n.endsWith('.jpeg') ||
+              n.endsWith('.png') ||
+              n.endsWith('.webp');
+        }).toList()..sort((a, b) => a.path.compareTo(b.path));
         images.addAll(files.map((f) => f.path));
       } catch (_) {}
     }
     if (!context.mounted) return;
     if (images.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se encontraron imágenes en el dispositivo')),
+        const SnackBar(
+          content: Text('No se encontraron imágenes en el dispositivo'),
+        ),
       );
       return;
     }
@@ -211,26 +280,51 @@ class _DesktopSettingsSheetState extends State<_DesktopSettingsSheet> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF5A6B7A))),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10, color: Color(0xFF5A6B7A)),
+        ),
         const SizedBox(height: 4),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
               visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.remove_circle_outline, size: 18, color: Color(0xFF66E0FF)),
+              icon: const Icon(
+                Icons.remove_circle_outline,
+                size: 18,
+                color: Color(0xFF66E0FF),
+              ),
               onPressed: () => onChange((value - 1).clamp(4, 24)),
             ),
-            Text('$value', style: const TextStyle(fontSize: 15, color: Color(0xFFE8F1F8), fontWeight: FontWeight.w600)),
+            Text(
+              '$value',
+              style: const TextStyle(
+                fontSize: 15,
+                color: Color(0xFFE8F1F8),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             IconButton(
               visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.add_circle_outline, size: 18, color: Color(0xFF66E0FF)),
+              icon: const Icon(
+                Icons.add_circle_outline,
+                size: 18,
+                color: Color(0xFF66E0FF),
+              ),
               onPressed: () => onChange((value + 1).clamp(4, 24)),
             ),
           ],
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _ttfxTextDebounce?.cancel();
+    _ttfxTextController.dispose();
+    super.dispose();
   }
 
   @override
@@ -243,109 +337,370 @@ class _DesktopSettingsSheetState extends State<_DesktopSettingsSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-            const Text(
-              'Configuración del escritorio',
-              style: TextStyle(fontSize: 13, color: Color(0xFFE8F1F8), fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 16),
-            const Text('TIPOGRAFÍA PRINCIPAL', style: TextStyle(fontSize: 10, color: Color(0xFF5A6B7A), letterSpacing: 3)),
-            const SizedBox(height: 8),
-            _buildFontChips(_font, (f) => widget.onFontFamily(f)),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () async {
-                  final chosen = await _pickGoogleFont(context, _font);
-                  if (chosen != null && mounted) {
-                    setState(() => _font = chosen);
-                    widget.onFontFamily(chosen);
-                  }
-                },
-                icon: const Icon(Icons.font_download_outlined, size: 18, color: Color(0xFF66E0FF)),
-                label: const Text('Más fuentes de Google…', style: TextStyle(color: Color(0xFF66E0FF))),
+              const Text(
+                'Configuración del escritorio',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFFE8F1F8),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            const Text('TIPOGRAFÍA DE TÍTULOS', style: TextStyle(fontSize: 10, color: Color(0xFF5A6B7A), letterSpacing: 3)),
-            const SizedBox(height: 8),
-            _buildFontChips(_titleFont, (f) => widget.onTitleFont(f)),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () async {
-                  final chosen = await _pickGoogleFont(context, _titleFont);
-                  if (chosen != null && mounted) {
-                    setState(() => _titleFont = chosen);
-                    widget.onTitleFont(chosen);
-                  }
-                },
-                icon: const Icon(Icons.title, size: 18, color: Color(0xFF66E0FF)),
-                label: const Text('Fuente de títulos de Google…', style: TextStyle(color: Color(0xFF66E0FF))),
+              const SizedBox(height: 16),
+              const Text(
+                'TIPOGRAFÍA PRINCIPAL',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Color(0xFF5A6B7A),
+                  letterSpacing: 3,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            const Text('GRILLA DEL ESCRITORIO', style: TextStyle(fontSize: 10, color: Color(0xFF5A6B7A), letterSpacing: 3)),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _gridStepper('Columnas', _gridCols, (v) {
-                  setState(() => _gridCols = v);
-                  widget.onGridCols(v);
-                }),
-                _gridStepper('Filas', _gridRows, (v) {
-                  setState(() => _gridRows = v);
-                  widget.onGridRows(v);
-                }),
+              const SizedBox(height: 8),
+              _buildFontChips(_font, (f) => widget.onFontFamily(f)),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    final chosen = await _pickGoogleFont(context, _font);
+                    if (chosen != null && mounted) {
+                      setState(() => _font = chosen);
+                      widget.onFontFamily(chosen);
+                    }
+                  },
+                  icon: const Icon(
+                    Icons.font_download_outlined,
+                    size: 18,
+                    color: Color(0xFF66E0FF),
+                  ),
+                  label: const Text(
+                    'Más fuentes de Google…',
+                    style: TextStyle(color: Color(0xFF66E0FF)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'TIPOGRAFÍA DE TÍTULOS',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Color(0xFF5A6B7A),
+                  letterSpacing: 3,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildFontChips(_titleFont, (f) => widget.onTitleFont(f)),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    final chosen = await _pickGoogleFont(context, _titleFont);
+                    if (chosen != null && mounted) {
+                      setState(() => _titleFont = chosen);
+                      widget.onTitleFont(chosen);
+                    }
+                  },
+                  icon: const Icon(
+                    Icons.title,
+                    size: 18,
+                    color: Color(0xFF66E0FF),
+                  ),
+                  label: const Text(
+                    'Fuente de títulos de Google…',
+                    style: TextStyle(color: Color(0xFF66E0FF)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'GRILLA DEL ESCRITORIO',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Color(0xFF5A6B7A),
+                  letterSpacing: 3,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _gridStepper('Columnas', _gridCols, (v) {
+                    setState(() => _gridCols = v);
+                    widget.onGridCols(v);
+                  }),
+                  _gridStepper('Filas', _gridRows, (v) {
+                    setState(() => _gridRows = v);
+                    widget.onGridRows(v);
+                  }),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'FONDO DEL ESCRITORIO',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Color(0xFF5A6B7A),
+                  letterSpacing: 3,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 10,
+                children: [
+                  for (final hex in _backgrounds)
+                    GestureDetector(
+                      onTap: () => widget.onBackground(hex),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: DynamicWidgetEngine.colorFromHex(hex),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFF3A4654),
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text(
+                  'Fondo TTFX',
+                  style: TextStyle(color: Color(0xFFE8F1F8)),
+                ),
+                subtitle: const Text(
+                  'Port nativo de omarchy-audio-background',
+                  style: TextStyle(fontSize: 11, color: Color(0xFF5A6B7A)),
+                ),
+                value: _ttfxEnabled,
+                onChanged: (v) {
+                  setState(() => _ttfxEnabled = v);
+                  widget.onTtfxEnabled(v);
+                },
+              ),
+              if (_ttfxEnabled) ...[
+                TextField(
+                  controller: _ttfxTextController,
+                  maxLength: 160,
+                  maxLines: 2,
+                  style: const TextStyle(color: Color(0xFFE8F1F8)),
+                  decoration: const InputDecoration(
+                    labelText: 'Texto TTFX',
+                    hintText: 'OHM',
+                    helperText: 'Se aplica al dejar de escribir',
+                    labelStyle: TextStyle(color: Color(0xFF5A6B7A)),
+                  ),
+                  onChanged: (value) {
+                    _ttfxTextDebounce?.cancel();
+                    _ttfxTextDebounce = Timer(
+                      const Duration(milliseconds: 500),
+                      () {
+                        widget.onTtfxText(value.trim().isEmpty ? 'OHM' : value);
+                      },
+                    );
+                  },
+                  onSubmitted: (value) {
+                    _ttfxTextDebounce?.cancel();
+                    widget.onTtfxText(value.trim().isEmpty ? 'OHM' : value);
+                  },
+                ),
+                Text(
+                  'Tamaño del texto ${_ttfxTextSize.round()}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF9FB3C8),
+                  ),
+                ),
+                Slider(
+                  min: 1,
+                  max: 7,
+                  divisions: 6,
+                  value: _ttfxTextSize,
+                  onChanged: (value) {
+                    setState(() => _ttfxTextSize = value);
+                    widget.onTtfxTextSize(value.round());
+                  },
+                ),
+                Text(
+                  'Posición X ${(_ttfxTextX * 100).round()}%',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF9FB3C8),
+                  ),
+                ),
+                Slider(
+                  min: 0,
+                  max: 1,
+                  divisions: 20,
+                  value: _ttfxTextX.clamp(0, 1),
+                  onChanged: (value) {
+                    setState(() => _ttfxTextX = value);
+                  },
+                  onChangeEnd: widget.onTtfxTextX,
+                ),
+                Text(
+                  'Posición Y ${(_ttfxTextY * 100).round()}%',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF9FB3C8),
+                  ),
+                ),
+                Slider(
+                  min: 0,
+                  max: 1,
+                  divisions: 20,
+                  value: _ttfxTextY.clamp(0, 1),
+                  onChanged: (value) {
+                    setState(() => _ttfxTextY = value);
+                  },
+                  onChangeEnd: widget.onTtfxTextY,
+                ),
+                DropdownButtonFormField<String>(
+                  initialValue: TtfxBackground.effects.contains(_ttfxEffect)
+                      ? _ttfxEffect
+                      : 'matrix',
+                  dropdownColor: const Color(0xFF10161C),
+                  decoration: const InputDecoration(
+                    labelText: 'Efecto',
+                    labelStyle: TextStyle(color: Color(0xFF5A6B7A)),
+                  ),
+                  style: const TextStyle(color: Color(0xFFE8F1F8)),
+                  items: [
+                    for (final effect in TtfxBackground.effects)
+                      DropdownMenuItem(
+                        value: effect,
+                        child: Text(TtfxBackground.effectLabel(effect)),
+                      ),
+                  ],
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setState(() => _ttfxEffect = v);
+                    widget.onTtfxEffect(v);
+                  },
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text(
+                    'Reaccionar al audio',
+                    style: TextStyle(color: Color(0xFFE8F1F8)),
+                  ),
+                  subtitle: const Text(
+                    'Analiza la salida de audio del dispositivo',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF5A6B7A)),
+                  ),
+                  value: _ttfxAudio,
+                  onChanged: (v) {
+                    setState(() => _ttfxAudio = v);
+                    widget.onTtfxAudio(v);
+                  },
+                ),
+                Text(
+                  'Intensidad ${_ttfxIntensity.round()}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF9FB3C8),
+                  ),
+                ),
+                Slider(
+                  min: 0,
+                  max: 10,
+                  divisions: 10,
+                  value: _ttfxIntensity,
+                  onChanged: (v) {
+                    setState(() => _ttfxIntensity = v);
+                    widget.onTtfxIntensity(v.round());
+                  },
+                ),
+                Text(
+                  'Velocidad ${_ttfxSpeed.toStringAsFixed(1)}×',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF9FB3C8),
+                  ),
+                ),
+                Slider(
+                  min: .2,
+                  max: 5,
+                  divisions: 48,
+                  value: _ttfxSpeed.clamp(.2, 5),
+                  onChanged: (v) {
+                    setState(() => _ttfxSpeed = v);
+                    widget.onTtfxSpeed(v);
+                  },
+                ),
+                Text(
+                  'Resolución ${_ttfxResolution.round()} (mayor = más rápida)',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF9FB3C8),
+                  ),
+                ),
+                Slider(
+                  min: 1,
+                  max: 8,
+                  divisions: 7,
+                  value: _ttfxResolution.clamp(1, 8),
+                  onChanged: (v) {
+                    setState(() => _ttfxResolution = v);
+                    widget.onTtfxResolution(v.round());
+                  },
+                ),
+                Text(
+                  'Reactividad ${_ttfxReactivity.round()}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF9FB3C8),
+                  ),
+                ),
+                Slider(
+                  min: 0,
+                  max: 5,
+                  divisions: 5,
+                  value: _ttfxReactivity,
+                  onChanged: (v) {
+                    setState(() => _ttfxReactivity = v);
+                    widget.onTtfxReactivity(v.round());
+                  },
+                ),
               ],
-            ),
-            const SizedBox(height: 8),
-            const Text('FONDO DEL ESCRITORIO', style: TextStyle(fontSize: 10, color: Color(0xFF5A6B7A), letterSpacing: 3)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 10,
-              children: [
-                for (final hex in _backgrounds)
-                  GestureDetector(
-                    onTap: () => widget.onBackground(hex),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: DynamicWidgetEngine.colorFromHex(hex),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF3A4654), width: 1),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _pickBackgroundImage(context),
+                      icon: const Icon(
+                        Icons.image_outlined,
+                        size: 18,
+                        color: Color(0xFF66E0FF),
+                      ),
+                      label: const Text(
+                        'Fondo con imagen…',
+                        style: TextStyle(color: Color(0xFF66E0FF)),
                       ),
                     ),
                   ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _pickBackgroundImage(context),
-                    icon: const Icon(Icons.image_outlined, size: 18, color: Color(0xFF66E0FF)),
-                    label: const Text('Fondo con imagen…', style: TextStyle(color: Color(0xFF66E0FF))),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    tooltip: 'Quitar imagen de fondo',
+                    onPressed: () => widget.onBackgroundImage(''),
+                    icon: const Icon(
+                      Icons.no_photography_outlined,
+                      size: 18,
+                      color: Color(0xFF5A6B7A),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  tooltip: 'Quitar imagen de fondo',
-                  onPressed: () => widget.onBackgroundImage(''),
-                  icon: const Icon(Icons.no_photography_outlined, size: 18, color: Color(0xFF5A6B7A)),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -480,7 +835,11 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
           children: [
             const Text(
               'Configuración del launcher',
-              style: TextStyle(fontSize: 13, color: Color(0xFFE8F1F8), fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 13,
+                color: Color(0xFFE8F1F8),
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 12),
             // Tabs
@@ -504,8 +863,8 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
                 child: _tab == 0
                     ? _buildVisualTab()
                     : _tab == 1
-                        ? _buildGesturesTab()
-                        : _buildApiTab(),
+                    ? _buildGesturesTab()
+                    : _buildApiTab(),
               ),
             ),
           ],
@@ -524,7 +883,9 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
           curve: Curves.easeOut,
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFF66E0FF).withValues(alpha: 0.18) : Colors.transparent,
+            color: selected
+                ? const Color(0xFF66E0FF).withValues(alpha: 0.18)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
@@ -533,7 +894,9 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-              color: selected ? const Color(0xFF66E0FF) : const Color(0xFF9AA7B4),
+              color: selected
+                  ? const Color(0xFF66E0FF)
+                  : const Color(0xFF9AA7B4),
             ),
           ),
         ),
@@ -542,20 +905,24 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
   }
 
   Widget _sectionLabel(String label) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(
-          label,
-          style: const TextStyle(fontSize: 10, color: Color(0xFF5A6B7A), letterSpacing: 3),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      label,
+      style: const TextStyle(
+        fontSize: 10,
+        color: Color(0xFF5A6B7A),
+        letterSpacing: 3,
+      ),
+    ),
+  );
 
   Widget _caption(String text) => Padding(
-        padding: const EdgeInsets.only(top: 4, bottom: 12),
-        child: Text(
-          text,
-          style: const TextStyle(fontSize: 10, color: Color(0xFF5A6B7A)),
-        ),
-      );
+    padding: const EdgeInsets.only(top: 4, bottom: 12),
+    child: Text(
+      text,
+      style: const TextStyle(fontSize: 10, color: Color(0xFF5A6B7A)),
+    ),
+  );
 
   Widget _buildVisualTab() {
     return Column(
@@ -603,13 +970,18 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Cajas', style: TextStyle(fontSize: 11, color: Color(0xFF9AA7B4))),
+                  const Text(
+                    'Cajas',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF9AA7B4)),
+                  ),
                   Slider(
                     value: _boxRadius,
                     min: 0,
                     max: 28,
                     divisions: 14,
-                    label: _boxRadius == 0 ? 'Cuadrado' : '${_boxRadius.round()}px',
+                    label: _boxRadius == 0
+                        ? 'Cuadrado'
+                        : '${_boxRadius.round()}px',
                     onChanged: (v) {
                       setState(() => _boxRadius = v);
                       widget.onBoxRadius(v);
@@ -623,13 +995,18 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Barras', style: TextStyle(fontSize: 11, color: Color(0xFF9AA7B4))),
+                  const Text(
+                    'Barras',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF9AA7B4)),
+                  ),
                   Slider(
                     value: _barRadius,
                     min: 0,
                     max: 28,
                     divisions: 14,
-                    label: _barRadius == 0 ? 'Cuadrado' : '${_barRadius.round()}px',
+                    label: _barRadius == 0
+                        ? 'Cuadrado'
+                        : '${_barRadius.round()}px',
                     onChanged: (v) {
                       setState(() => _barRadius = v);
                       widget.onBarRadius(v);
@@ -640,22 +1017,32 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
             ),
           ],
         ),
-        _caption('Redondez de las esquinas de cajas y barras. 0 px = esquinas cuadradas (sin borde redondeado).'),
+        _caption(
+          'Redondez de las esquinas de cajas y barras. 0 px = esquinas cuadradas (sin borde redondeado).',
+        ),
         _sectionLabel('BARRA DE FAVORITOS'),
         Wrap(
           spacing: 8,
           children: [
-            for (final m in const ['auto', 'horizontal', 'vertical', 'grid', 'list'])
+            for (final m in const [
+              'auto',
+              'horizontal',
+              'vertical',
+              'grid',
+              'list',
+            ])
               ChoiceChip(
-                label: Text(m == 'auto'
-                    ? 'Automático'
-                    : m == 'horizontal'
-                        ? 'Horizontal'
-                        : m == 'vertical'
-                            ? 'Vertical'
-                            : m == 'grid'
-                                ? 'Grilla'
-                                : 'Lista'),
+                label: Text(
+                  m == 'auto'
+                      ? 'Automático'
+                      : m == 'horizontal'
+                      ? 'Horizontal'
+                      : m == 'vertical'
+                      ? 'Vertical'
+                      : m == 'grid'
+                      ? 'Grilla'
+                      : 'Lista',
+                ),
                 selected: _favBarMode == m,
                 materialTapTargetSize: MaterialTapTargetSize.padded,
                 onSelected: (_) {
@@ -665,7 +1052,9 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
               ),
           ],
         ),
-        _caption('Disposición de la barra de apps favoritas. "Automático" la adapta al borde (horizontal arriba/abajo, vertical a los lados). "Lista" muestra cada app como fila con icono y nombre.'),
+        _caption(
+          'Disposición de la barra de apps favoritas. "Automático" la adapta al borde (horizontal arriba/abajo, vertical a los lados). "Lista" muestra cada app como fila con icono y nombre.',
+        ),
         _sectionLabel('IDIOMA'),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -679,10 +1068,17 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
               isExpanded: true,
               dropdownColor: const Color(0xFF1A2330),
               style: const TextStyle(fontSize: 12, color: Color(0xFFE8F1F8)),
-              icon: const Icon(Icons.language, size: 18, color: Color(0xFF66E0FF)),
+              icon: const Icon(
+                Icons.language,
+                size: 18,
+                color: Color(0xFF66E0FF),
+              ),
               items: const [
                 DropdownMenuItem(value: 'auto', child: Text('Automático')),
-                DropdownMenuItem(value: 'default', child: Text('Por defecto del sistema')),
+                DropdownMenuItem(
+                  value: 'default',
+                  child: Text('Por defecto del sistema'),
+                ),
               ],
               onChanged: (v) {
                 if (v == null) return;
@@ -692,7 +1088,9 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
             ),
           ),
         ),
-        _caption('Idioma de la interfaz. "Automático" detecta el idioma del sistema; "Por defecto" usa el configurado en el escritorio.'),
+        _caption(
+          'Idioma de la interfaz. "Automático" detecta el idioma del sistema; "Por defecto" usa el configurado en el escritorio.',
+        ),
         _sectionLabel('DEPURACIÓN'),
         Row(
           children: [
@@ -711,7 +1109,9 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
             ),
           ],
         ),
-        _caption('Dibuja contornos sobre las zonas que capturan toques (cajas de borde y detectores de gestos de los bordes) para ver qué está interceptando los taps.'),
+        _caption(
+          'Dibuja contornos sobre las zonas que capturan toques (cajas de borde y detectores de gestos de los bordes) para ver qué está interceptando los taps.',
+        ),
       ],
     );
   }
@@ -741,24 +1141,43 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
                     ),
                   );
                 },
-                icon: const Icon(Icons.gesture, size: 18, color: Color(0xFF66E0FF)),
-                label: const Text('Forzar gestos', style: TextStyle(color: Color(0xFF66E0FF))),
+                icon: const Icon(
+                  Icons.gesture,
+                  size: 18,
+                  color: Color(0xFF66E0FF),
+                ),
+                label: const Text(
+                  'Forzar gestos',
+                  style: TextStyle(color: Color(0xFF66E0FF)),
+                ),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: () => OhmPlatform.openNavigationSettings(),
-                icon: const Icon(Icons.settings, size: 18, color: Color(0xFF66E0FF)),
-                label: const Text('Ajustes', style: TextStyle(color: Color(0xFF66E0FF))),
+                icon: const Icon(
+                  Icons.settings,
+                  size: 18,
+                  color: Color(0xFF66E0FF),
+                ),
+                label: const Text(
+                  'Ajustes',
+                  style: TextStyle(color: Color(0xFF66E0FF)),
+                ),
               ),
             ),
           ],
         ),
-        _caption('Por defecto se usan los botones de Android. Si prefieres gestos, actívalos aquí.'),
+        _caption(
+          'Por defecto se usan los botones de Android. Si prefieres gestos, actívalos aquí.',
+        ),
         Row(
           children: [
-            const Text('Gestos internos (fallback)', style: TextStyle(fontSize: 12, color: Color(0xFF9AA7B4))),
+            const Text(
+              'Gestos internos (fallback)',
+              style: TextStyle(fontSize: 12, color: Color(0xFF9AA7B4)),
+            ),
             const Spacer(),
             Switch(
               value: _gestureNavEnabled,
@@ -769,14 +1188,25 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
             ),
           ],
         ),
-        _caption('Si Xiaomi bloquea los gestos del sistema, Ohm captura bordes de pantalla para Atrás/Inicio/Recientes dentro del launcher.'),
+        _caption(
+          'Si Xiaomi bloquea los gestos del sistema, Ohm captura bordes de pantalla para Atrás/Inicio/Recientes dentro del launcher.',
+        ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: () => OhmPlatform.openAccessibilitySettings(),
-          icon: const Icon(Icons.accessibility_new, size: 18, color: Color(0xFF66E0FF)),
-          label: const Text('Activar gestos globales (accesibilidad)', style: TextStyle(color: Color(0xFF66E0FF))),
+          icon: const Icon(
+            Icons.accessibility_new,
+            size: 18,
+            color: Color(0xFF66E0FF),
+          ),
+          label: const Text(
+            'Activar gestos globales (accesibilidad)',
+            style: TextStyle(color: Color(0xFF66E0FF)),
+          ),
         ),
-        _caption('Para gestos en cualquier app, activa el servicio de accesibilidad de Ohm Launcher. Requiere aprobación manual del sistema.'),
+        _caption(
+          'Para gestos en cualquier app, activa el servicio de accesibilidad de Ohm Launcher. Requiere aprobación manual del sistema.',
+        ),
         const SizedBox(height: 20),
         OutlinedButton.icon(
           onPressed: _checkingDefault
@@ -789,11 +1219,19 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
                     if (!mounted) return;
                     if (isDefault) {
                       messenger.showSnackBar(
-                        const SnackBar(content: Text('Ohm Launcher ya es el launcher por defecto ✓')),
+                        const SnackBar(
+                          content: Text(
+                            'Ohm Launcher ya es el launcher por defecto ✓',
+                          ),
+                        ),
                       );
                     } else {
                       messenger.showSnackBar(
-                        const SnackBar(content: Text('Elige "Ohm Launcher" como launcher por defecto…')),
+                        const SnackBar(
+                          content: Text(
+                            'Elige "Ohm Launcher" como launcher por defecto…',
+                          ),
+                        ),
                       );
                       await OhmPlatform.requestDefaultLauncher();
                     }
@@ -802,7 +1240,11 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
                   }
                 },
           icon: const Icon(Icons.home_outlined, size: 18),
-          label: Text(_checkingDefault ? 'Comprobando…' : 'Establecer como launcher por defecto'),
+          label: Text(
+            _checkingDefault
+                ? 'Comprobando…'
+                : 'Establecer como launcher por defecto',
+          ),
         ),
         const SizedBox(height: 8),
         OutlinedButton.icon(
@@ -813,7 +1255,9 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
             style: TextStyle(color: Color(0xFF66E0FF)),
           ),
         ),
-        _caption('En Xiaomi/MIUI cambiar de launcher puede desactivar los gestos; actívalos aquí.'),
+        _caption(
+          'En Xiaomi/MIUI cambiar de launcher puede desactivar los gestos; actívalos aquí.',
+        ),
       ],
     );
   }
@@ -831,7 +1275,10 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 6, top: 10),
-          child: Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF9AA7B4))),
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF9AA7B4)),
+          ),
         ),
         TextField(
           controller: TextEditingController(text: value),
@@ -844,8 +1291,14 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
             hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF5A6B7A)),
             filled: true,
             fillColor: const Color(0xFF16202A),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
           ),
         ),
       ],
@@ -861,8 +1314,10 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
         Row(
           children: [
             const Expanded(
-              child: Text('Servidor en localhost',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF9AA7B4))),
+              child: Text(
+                'Servidor en localhost',
+                style: TextStyle(fontSize: 12, color: Color(0xFF9AA7B4)),
+              ),
             ),
             Switch(
               value: _apiServerEnabled,
@@ -873,8 +1328,10 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
             ),
           ],
         ),
-        _caption('Expones un control remoto del launcher en 127.0.0.1 sin abrir Termux. '
-            'Endpoints: GET /health, POST /command {command,args?}, POST /widget {source,format?}, POST /ai {prompt}.'),
+        _caption(
+          'Expones un control remoto del launcher en 127.0.0.1 sin abrir Termux. '
+          'Endpoints: GET /health, POST /command {command,args?}, POST /widget {source,format?}, POST /ai {prompt}.',
+        ),
         _apiTextField(
           label: 'Puerto',
           value: '$_apiServerPort',
@@ -889,8 +1346,10 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
         Row(
           children: [
             const Expanded(
-              child: Text('Usar Termux si está disponible (opcional)',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF9AA7B4))),
+              child: Text(
+                'Usar Termux si está disponible (opcional)',
+                style: TextStyle(fontSize: 12, color: Color(0xFF9AA7B4)),
+              ),
             ),
             Switch(
               value: _shellPreferTermux,
@@ -901,15 +1360,19 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
             ),
           ],
         ),
-        _caption('Por defecto los comandos corren EMBEBIDOS en el propio launcher '
-            '(shell del sistema, sin apps de terceros). Activa esto solo si quieres '
-            'reutilizar el entorno de paquetes de Termux y tienes Termux:API instalado.'),
+        _caption(
+          'Por defecto los comandos corren EMBEBIDOS en el propio launcher '
+          '(shell del sistema, sin apps de terceros). Activa esto solo si quieres '
+          'reutilizar el entorno de paquetes de Termux y tienes Termux:API instalado.',
+        ),
         _sectionLabel('TERMINAL QUAKE'),
         Row(
           children: [
             const Expanded(
-              child: Text('Terminal desplegable (swipe-down en la mitad superior)',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF9AA7B4))),
+              child: Text(
+                'Terminal desplegable (swipe-down en la mitad superior)',
+                style: TextStyle(fontSize: 12, color: Color(0xFF9AA7B4)),
+              ),
             ),
             Switch(
               value: _quakeTerminal,
@@ -920,12 +1383,16 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
             ),
           ],
         ),
-        _caption('Despliega una terminal real (PTY) con un swipe hacia abajo desde la '
-            'mitad superior del escritorio. Desde ahí controlas el sistema y puedes '
-            'usar bun/opencode/claude/kimi o tmux.'),
+        _caption(
+          'Despliega una terminal real (PTY) con un swipe hacia abajo desde la '
+          'mitad superior del escritorio. Desde ahí controlas el sistema y puedes '
+          'usar bun/opencode/claude/kimi o tmux.',
+        ),
         _sectionLabel('ASISTENTE IA'),
-        _caption('Cualquier endpoint compatible con /v1/chat/completions '
-            '(OpenAI, Ollama, LM Studio, OpenRouter, Claude por proxy, Kimi, Codex…).'),
+        _caption(
+          'Cualquier endpoint compatible con /v1/chat/completions '
+          '(OpenAI, Ollama, LM Studio, OpenRouter, Claude por proxy, Kimi, Codex…).',
+        ),
         _apiTextField(
           label: 'URL base',
           value: _aiBaseUrl,
@@ -964,8 +1431,10 @@ class _LauncherSettingsSheetState extends State<_LauncherSettingsSheet> {
             widget.onAiSystemPrompt(v.trim());
           },
         ),
-        _caption('El asistente (botón ⚡ abajo a la derecha) inyecta en caliente el '
-            'componente que devuelva la IA en un bloque ```json o ```qml.'),
+        _caption(
+          'El asistente (botón ⚡ abajo a la derecha) inyecta en caliente el '
+          'componente que devuelva la IA en un bloque ```json o ```qml.',
+        ),
       ],
     );
   }
